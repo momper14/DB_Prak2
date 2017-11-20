@@ -10,8 +10,8 @@ public class OracleConnection {
     // baut die Verbindung auf
     public OracleConnection(String user, String pw) throws ClassNotFoundException, SQLException {
         Class.forName("oracle.jdbc.driver.OracleDriver");
-//        this.con = DriverManager.getConnection("jdbc:oracle:thin:@schelling.nt.fh-koeln.de:1521:xe", user, pw);
-        this.con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:xe", user, pw);
+        this.con = DriverManager.getConnection("jdbc:oracle:thin:@schelling.nt.fh-koeln.de:1521:xe", user, pw);
+    //    this.con = DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:xe", user, pw);
     }
 
     // bearbeitet Insert, Update und Delete befehle
@@ -52,6 +52,27 @@ public class OracleConnection {
         }
 
         return ret;
+    }
+    
+    // bearbeitet das auslesen einzelner Werte 
+    String select(String tabelle, String nurEineSpalte, String where) throws SQLException {
+        StringBuilder line = new StringBuilder();
+        String tmp;
+        ResultSet rs;
+
+        try (Statement sm = con.createStatement()) {
+            line.append("SELECT ").append(nurEineSpalte).append(" FROM ").append(tabelle).append(" WHERE ").append(where);
+            rs = sm.executeQuery(line.toString());
+
+            while (rs.next()) {
+
+                tmp = rs.getString(nurEineSpalte);
+                return tmp;
+            }
+
+        }
+
+        return ("ENDE");
     }
 
     // Schließt die Verbindung zur Datenbank
