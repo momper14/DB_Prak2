@@ -6,31 +6,32 @@ import java.util.*;
 // beinhaltet die Aufgabenstellungs-Lösungen
 public class Main {
 
-    // Bietet das Menü zur Steuerung zwichen den Aufgaben
+    // Bietet das Menü zur Steuerung zwischen den Aufgaben
     public static void main(String args[]) throws IOException {
 
         OracleConnection con;
         BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
         int choice;
-
+        int nurPruefen = 0;
         try {
             con = new OracleConnection("dbprak45", "TiMo45");
             do {
-                System.out.println("Bitte wählen Sie einen der folgenden Menüpunkte");
+                System.out.println("\nBitte wählen Sie einen der folgenden Menüpunkte");
                 System.out.println("(1) JDBC Insert");
                 System.out.println("(2) Logistik Verwaltung");
                 System.out.println("(3) Erfassung Kundenbestellung");
-                System.out.println("(0) Beenden");
+                System.out.println("(0) Beenden\n");
                 choice = Integer.parseInt(read.readLine());
                 switch (choice) {
                     case 1:
                         nr4(con);
                         break;
                     case 2:
-                        nr5(con);
+                        nr5(con, nurPruefen);
                         break;
                     case 3:
-                        nr6(con);
+                        nurPruefen = 1;
+                        nr6(con, nurPruefen);
                         break;
                 }
             } while (choice != 0);
@@ -74,7 +75,7 @@ public class Main {
                 werte[1] = "'" + split[i + 1] + "'";
                 werte[2] = split[i + 2];
                 werte[3] = split[i + 3];
-                werte[4] = "to_date('" + split[i + 4] + "','dd.mm.YYYY')";
+                werte[4] = "to_date('" + split[i + 4] + "','DD.MM.YYYY')";
 
                 // Ausführen
                 try {
@@ -90,25 +91,24 @@ public class Main {
             }
         }
 
-        System.out.println();
-        System.out.println("Anzahl gültiger einträge: " + anzahl);
-        System.out.println();
+        System.out.println("\nAnzahl gültiger einträge: " + anzahl + "\n");
+
     }
 
     // Bietet das Menü zur Steuerung der Aufgabe 5
-    public static void nr5(OracleConnection con) throws IOException {
+    public static void nr5(OracleConnection con, int nurPruefen) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         int choice;
 
         do {
-            System.out.println("Bitte wählen sie den entsprechenden Menüpunkt. ");
+            System.out.println("\nBitte wählen sie den entsprechenden Menüpunkt. ");
             System.out.println("(1) Anzeigen aller Artikel");
             System.out.println("(2) Anzeigen aller Lager");
             System.out.println("(3) Anzeigen aller Kunden");
             System.out.println("(4) Anzeigen der Stammdaten eines Artikels");
             System.out.println("(5) Erfassen eines neuen Lagerbestandes");
             System.out.println("(6) anpassen der Menge eines Artikels");
-            System.out.println("(0) Beenden");
+            System.out.println("(0) Zurück");
 
             choice = Integer.parseInt(reader.readLine());
 
@@ -154,6 +154,7 @@ public class Main {
                     System.out.println("Bitte Artikelnummer eingeben: ");
 
                     try {
+                        nurPruefen = 0;
                         stammdaten(con, reader.readLine());
                     } catch (SQLException e) {
                         if (e.getCause() != null) {
@@ -187,6 +188,7 @@ public class Main {
                             e.printStackTrace();
                         }
                     }
+                    System.out.println("Ihre Eingabe war erfolgreich\n");
                     break;
                 }
 
@@ -212,9 +214,81 @@ public class Main {
             }
         } while (choice != 0);
     }
+// Methode zum Erfassen einer Kundenbestellung
 
-    public static void nr6(OracleConnection con) {
+    public static void nr6(OracleConnection con, int nurPruefen) throws IOException, SQLException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        int bestnr = benrNext(con);
+        ArrayList<String[]> kunde, artikel, lagerbestand, kubest;
 
+        //Einlesen und ueberpruefen der Daten auf Richtigkeit 
+        System.out.println("----------Automatisches Bestellsystem----------\n\n");
+
+        do {
+            System.out.println("Bitte geben Sie die Kundenummer ein\n");
+            String spalten[] = {"KNR", "KNAME", "PLZ", "ORT", "STRASSE"};
+            kunde = con.select("KUNDE", spalten, "KNR = " + reader.readLine());
+        } while (kunde.size() < 1);
+
+        do {
+            System.out.println("Bitte geben Sie die Artikelnummer ein\n");
+            String spalten[] = {"ARTNR", "PREIS", "ARTBEZ"};
+            artikel = con.select("ARTIKEL", spalten, "ARTNR = " + reader.readLine());
+        } while (artikel.size() < 1);
+
+        System.out.println("Bitte geben sie die Bestellmenge ein");
+        int mengeEin = Integer.parseInt(reader.readLine());
+        int mengeLag = stammdaten(con, artikel.get(0)[0]);
+
+        String spaltenSel[] = {"BSTNR", "MENGE"};
+        lagerbestand = con.select("LAGERBESTAND", spaltenSel, "ARTNR = " + artikel.get(0)[0]);
+
+        if (mengeEin <= mengeLag) {
+            int mengeEinTmp = mengeEin, mengeTmp;
+            for (String arr[] : lagerbestand) {
+                mengeTmp = Integer.parseInt(arr[1]);
+                if (mengeTmp >= mengeEinTmp) {
+                    mengeTmp = mengeEinTmp;
+                    mengeEinTmp = 0;
+                }
+                String spaltenUpd[] = {"MENGE"}, werte[] = {arr[1] + " - " + mengeTmp};
+                Util.update(con, "LAGERBESTAND", spaltenUpd, werte, "BSTNR = " + arr[0]);
+                mengeEinTmp -= mengeTmp;
+
+                if (mengeEinTmp == 0) {
+                    break;
+                }
+            }
+
+            String spalten[] = {"BENR", "KNR", "ARTNR", "BMENGE", "BDAT", "LDAT", "STATUS", "RBET"},
+                    werte[] = {"" + bestnr, kunde.get(0)[0], artikel.get(0)[0], "" + mengeEin, "sysdate", "sysdate+14", "" + 1, artikel.get(0)[1] + " * " + mengeEin};
+
+            Util.insert(con, "KUBEST", spalten, werte);
+            spalten = new String[]{"LDAT", "RBET"};
+            kubest = con.select("KUBEST", spalten, "BENR = " + bestnr);
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter("AB" + kunde.get(0)[0] + "B" + bestnr + ".txt"));
+
+            StringBuilder line = new StringBuilder();
+            line.append("NAME: ").append(kunde.get(0)[1]).append("\n");
+            line.append("PLZ: ").append(kunde.get(0)[2]).append("\n");
+            line.append("ORT: ").append(kunde.get(0)[3]).append("\n");
+            line.append("STRASSE: ").append(kunde.get(0)[4]).append("\n\n");
+            line.append("Artikel: ").append(artikel.get(0)[2]).append("\tMenge: ").append(mengeEin).append("\n");
+            line.append("spätestes Lieferdatum: ").append(kubest.get(0)[0]).append("\n");
+            line.append("Betrag: ").append(kubest.get(0)[1]);
+
+            writer.write(line.toString());
+            writer.close();
+
+            System.out.println("");
+
+        } else {
+            int dx = mengeEin - mengeLag;
+            System.out.println("Fehlmenge: " + dx);
+            System.out.println("Nicht genügend Lagerbestand vorhanden!");
+
+        }
     }
 
     // Zeig alle Datensätze der Tabelle Artikel
@@ -246,7 +320,7 @@ public class Main {
     }
 
     // Gibt alle Stammdaten eines Artikels und seiner Lagerbestände aus
-    public static void stammdaten(OracleConnection con, String artikelnummer) throws SQLException {
+    public static int stammdaten(OracleConnection con, String artikelnummer) throws SQLException {
 
         String spaltenArtikel[] = {"ARTNR", "ARTBEZ", "MGE", "PREIS", "STEU", "EDAT"},
                 spaltenLagerbestand[] = {"BSTNR", "ARTNR", "LNR", "MENGE"},
@@ -318,14 +392,16 @@ public class Main {
                 listErgebnis.add(tmpErg);
             }
 
-            // Ausgeben des Ergebnises
+            // Direktes ausgeben des Ergebnises
             ausgabe(spaltenErgebnis, listErgebnis);
-            System.out.println("Menge: " + s1);
-            System.out.println();
+            System.out.println("Menge: " + s1 + "\n");
+            return s1;
+
         } else {
-            System.out.println();
-            System.out.println("Kein Artikel gefunden");
-            System.out.println();
+
+            System.out.println("\nKein Artikel gefunden\n");
+            return -1;
+
         }
     }
 
@@ -343,6 +419,7 @@ public class Main {
                 where = "BSTNR = " + bstnr;
 
         Util.update(con, "LAGERBESTAND", spalten, werte, where);
+
     }
 
     // Hilfsfunktion für Ausgabe
@@ -352,19 +429,42 @@ public class Main {
         System.out.println();
 
         line = new StringBuilder();
+        //Ausgabe der Spaltennamen
         for (String str : spalten) {
-            line.append(str).append("\t");
+            line.append(str).append("\t\t\t");
+            if (str.equals("LORT")) {
+                line.append("\t");
+            }
+            if (str.equals("KNAME")) {
+                line.append("\t");
+            }
         }
         System.out.println(line.toString());
 
+        //Ausgabe des Tabellen Inhalts
         for (String[] arr : arrList) {
             line = new StringBuilder();
             for (String str : arr) {
-                line.append(str).append("\t");
+                line.append(str).append("\t\t\t");
             }
             System.out.println(line.toString());
         }
 
         System.out.println();
+    }
+
+    public static int benrNext(OracleConnection con) throws SQLException {
+        int ret = 0;
+        ArrayList<String[]> kubest;
+        String spalten[] = {"BENR"};
+        kubest = con.select("KUBEST", spalten, null);
+
+        for (String arr[] : kubest) {
+            if (Integer.parseInt(arr[0]) > ret) {
+                ret = Integer.parseInt(arr[0]);
+            }
+        }
+
+        return ret + 1;
     }
 }
