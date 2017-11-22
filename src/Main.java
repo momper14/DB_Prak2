@@ -1,4 +1,3 @@
-
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -242,7 +241,8 @@ public class Main {
 
         String spaltenSel[] = {"BSTNR", "MENGE"};
         lagerbestand = con.select("LAGERBESTAND", spaltenSel, "ARTNR = " + artikel.get(0)[0]);
-
+        
+        //Prüfen ob eine ausreichende Menge in den Lagern liegt 
         if (mengeEin <= mengeLag) {
             int mengeEinTmp = mengeEin, mengeTmp;
             for (String arr[] : lagerbestand) {
@@ -259,7 +259,7 @@ public class Main {
                     break;
                 }
             }
-
+            //Insert auf KUBEST
             String spalten[] = {"BENR", "KNR", "ARTNR", "BMENGE", "BDAT", "LDAT", "STATUS", "RBET"},
                     werte[] = {"" + bestnr, kunde.get(0)[0], artikel.get(0)[0], "" + mengeEin, "sysdate", "sysdate+14", "" + 1, artikel.get(0)[1] + " * " + mengeEin};
 
@@ -269,6 +269,7 @@ public class Main {
 
             BufferedWriter writer = new BufferedWriter(new FileWriter("AB" + kunde.get(0)[0] + "B" + bestnr + ".txt"));
 
+            //Schreiben des Lieferscheins
             StringBuilder line = new StringBuilder();
             line.append("NAME: ").append(kunde.get(0)[1]).append("\n");
             line.append("PLZ: ").append(kunde.get(0)[2]).append("\n");
@@ -281,7 +282,7 @@ public class Main {
             writer.write(line.toString());
             writer.close();
 
-            System.out.println("");
+            System.out.println("----------Lieferschein wurde erstellt----------");
 
         } else {
             int dx = mengeEin - mengeLag;
@@ -431,21 +432,23 @@ public class Main {
         line = new StringBuilder();
         //Ausgabe der Spaltennamen
         for (String str : spalten) {
-            line.append(str).append("\t\t\t");
-            if (str.equals("LORT")) {
-                line.append("\t");
-            }
-            if (str.equals("KNAME")) {
-                line.append("\t");
-            }
+            line.append(str);
+           System.out.printf("%15s|",str);
+            
         }
-        System.out.println(line.toString());
+       
+       System.out.println();
 
         //Ausgabe des Tabellen Inhalts
         for (String[] arr : arrList) {
+            
             line = new StringBuilder();
             for (String str : arr) {
-                line.append(str).append("\t\t\t");
+                
+                str = str.replace("00:00:00.0", "");
+                System.out.printf("%15s ",str);
+                 
+                
             }
             System.out.println(line.toString());
         }
