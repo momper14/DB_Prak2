@@ -1,0 +1,8 @@
+NAME: Sofie Maier
+PLZ: 38719
+ORT: Franzen
+STRASSE: Köhlerweg
+
+Artikel: Butter	Menge: 60
+spätestes Lieferdatum: 2017-12-04 23:09:30.0
+Betrag: 35.4
