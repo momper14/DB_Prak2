@@ -249,7 +249,6 @@ public class Main {
                 mengeTmp = Integer.parseInt(arr[1]);
                 if (mengeTmp >= mengeEinTmp) {
                     mengeTmp = mengeEinTmp;
-                    mengeEinTmp = 0;
                 }
                 String spaltenUpd[] = {"MENGE"}, werte[] = {arr[1] + " - " + mengeTmp};
                 Util.update(con, "LAGERBESTAND", spaltenUpd, werte, "BSTNR = " + arr[0]);
