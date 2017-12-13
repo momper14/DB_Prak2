@@ -1,3 +1,4 @@
+
 import java.io.*;
 import java.sql.*;
 import java.util.*;
@@ -166,12 +167,9 @@ public class Main {
                     break;
 
                 case 5: {
-                    String bstnr,
-                            artnr,
+                    String artnr,
                             lnr,
                             menge;
-                    System.out.println("Bitte Bestandsnummer eingeben: ");
-                    bstnr = reader.readLine();
                     System.out.println("Bitte Artikelnummer eingeben: ");
                     artnr = reader.readLine();
                     System.out.println("Bitte Lagernummer eingeben: ");
@@ -179,7 +177,8 @@ public class Main {
                     System.out.println("Bitte Menge eingeben: ");
                     menge = reader.readLine();
                     try {
-                        erfassenLagerbestand(con, bstnr, artnr, lnr, menge);
+                        erfassenLagerbestand(con, artnr, lnr, menge);
+                        System.out.println("Ihre Eingabe war erfolgreich\n");
                     } catch (SQLException e) {
                         if (e.getCause() != null) {
                             System.err.println(e.getCause().toString());
@@ -187,7 +186,6 @@ public class Main {
                             e.printStackTrace();
                         }
                     }
-                    System.out.println("Ihre Eingabe war erfolgreich\n");
                     break;
                 }
 
@@ -241,7 +239,7 @@ public class Main {
 
         String spaltenSel[] = {"BSTNR", "MENGE"};
         lagerbestand = con.select("LAGERBESTAND", spaltenSel, "ARTNR = " + artikel.get(0)[0]);
-        
+
         //Prüfen ob eine ausreichende Menge in den Lagern liegt 
         if (mengeEin <= mengeLag) {
             int mengeEinTmp = mengeEin, mengeTmp;
@@ -406,8 +404,8 @@ public class Main {
     }
 
     // neuen Lagerbestand erfassen
-    public static void erfassenLagerbestand(OracleConnection con, String bstnr, String artnr, String lnr, String menge) throws SQLException {
-        String tabelle = "LAGERBESTAND", spalten[] = {"BSTNR", "ARTNR", "LNR", "MENGE"}, werte[] = {bstnr, artnr, lnr, menge};
+    public static void erfassenLagerbestand(OracleConnection con, String artnr, String lnr, String menge) throws SQLException {
+        String tabelle = "LAGERBESTAND", spalten[] = {"ARTNR", "LNR", "MENGE"}, werte[] = {artnr, lnr, menge};
 
         Util.insert(con, tabelle, spalten, werte);
     }
@@ -432,22 +430,21 @@ public class Main {
         //Ausgabe der Spaltennamen
         for (String str : spalten) {
             line.append(str);
-           System.out.printf("%15s|",str);
-            
+            System.out.printf("%15s|", str);
+
         }
-       
-       System.out.println();
+
+        System.out.println();
 
         //Ausgabe des Tabellen Inhalts
         for (String[] arr : arrList) {
-            
+
             line = new StringBuilder();
             for (String str : arr) {
-                
-                str = str.replace("00:00:00.0", "");
-                System.out.printf("%15s ",str);
-                 
-                
+
+//                str = str.replace("00:00:00.0", "");
+                System.out.printf("%15s ", str);
+
             }
             System.out.println(line.toString());
         }
